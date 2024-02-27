@@ -22,14 +22,21 @@ void toGray(int n)
 {
     int counter[8];
     int i = 0;
-    while(i < 8)
+    int msb = 0; // Initialize most significant bit
+
+    while (n > 0)
     {
-        n = n >> 1;
-        counter[i] = n ^ i;
-        i++;
+        counter[i++] = n & 1;
+        n >>= 1;
     }
 
-    for(int j = i-1; j>=0; j--)
+    for (int j = 0; j < i; j++)
+    {
+        counter[j] ^= msb; // XOR with the most significant bit
+        msb = counter[j]; // Update most significant bit
+    }
+
+    for (int j = i - 1; j >= 0; j--)
     {
         printf("%d", counter[j]);
     }
@@ -50,6 +57,5 @@ void delay()
 
 int main()
 {
-    int a=0;
     toGray(7);
 }
