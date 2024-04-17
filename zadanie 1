@@ -134,6 +134,92 @@ void GrayCountDown()
     
 }
 
+void BCDCountUp()
+{
+    unsigned char portValue = 0;
+    TRISA = 0x0000;
+    TRISD = 0xFFFF;
+    
+    while(1)
+    {
+        LATA = (((portValue/10) << 4) | (portValue % 10));
+        __delay32(4000000);
+        portValue += 1;
+        
+       if(PORTDbits.RD6 == 0)
+       {
+           number -= 1;
+           break;
+       }
+        
+       if(PORTDbits.RD7 == 0)
+       {
+           number += 1;
+           break;
+       }
+        
+    }
+}
+
+void BCDCountDown()
+{
+    unsigned char portValue = 99;
+    TRISA = 0x0000;
+    TRISD = 0xFFFF;
+    
+    while(1)
+    {
+        LATA = (((portValue/10) << 4) | (portValue % 10));
+        __delay32(4000000);
+        portValue -= 1;
+        
+       if(PORTDbits.RD6 == 0)
+       {
+           number -= 1;
+           break;
+       }
+        
+       if(PORTDbits.RD7 == 0)
+       {
+           number += 1;
+           break;
+       }
+        
+    }
+}
+
+void snake()
+{
+    unsigned char portValue[10] = {7,14,28,56,112,224,112,56,28,14};
+    TRISA = 0x0000;
+    TRISD = 0xFFFF;
+    unsigned int i = 0;
+    
+    while(1)
+    {
+        LATA = portValue[i];
+        __delay32(4000000);
+        i++;
+       
+       if(i==10)
+       {
+           i = 0;
+       }
+        
+       if(PORTDbits.RD6 == 0)
+       {
+           number -= 1;
+           break;
+       }
+        
+       if(PORTDbits.RD7 == 0)
+       {
+           number += 1;
+           break;
+       }
+    }
+}
+
 
 int main(void) 
 {
@@ -162,10 +248,24 @@ int main(void)
         GrayCountDown();
     }
     
-    if(number > 3)
+    if(number == 4)
+    {
+        BCDCountUp();
+    }
+    
+    if(number == 5)
+    {
+        BCDCountDown();
+    }
+    
+    if(number == 6)
+    {
+        snake();
+    }
+    
+    if(number > 6)
     {
         number = 0;
     }
-    
     
 }
