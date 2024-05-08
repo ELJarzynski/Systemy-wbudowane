@@ -220,6 +220,81 @@ void snake()
     }
 }
 
+void queue()
+{
+    unsigned char portValue = 0;
+    TRISA = 0x0000;
+    TRISD = 0xFFFF;
+    int break_button1 = 0;
+    int break_button2 = 0;
+    
+    for(int i=0; i<8; i++)
+    {
+        int temp = 1;
+        for(int j=i+1; j<8; j++)
+        {
+            LATA = portValue + temp;
+            temp = temp << 1;
+            if(PORTDbits.RD6 == 0)
+            {
+                break_button1 = 1;
+                break;
+            }
+        
+            if(PORTDbits.RD7 == 0)
+            {
+                break_button2 = 1;
+                break;
+            }
+            
+            __delay32(4000000);
+        }
+        portValue += temp;
+        
+        if(break_button1 == 1)
+        {
+            number -= 1;
+            break;
+        }
+        
+        if(break_button2 == 1)
+        {
+            number += 1;
+            break;
+        }
+    }
+    
+}
+
+void generator()
+{
+    unsigned char portValue;
+    unsigned char seed = 0b1110011;
+    TRISA = 0x0000;
+    TRISD = 0xFFFF;
+    
+    while(seed != 0)
+    {
+        portValue = (seed >> 0) ^ (seed >> 1) ^ (seed >> 4) ^ (seed >> 5) ^ (seed >> 6);
+        seed = seed >> 1 | seed << 6;
+        LATA = portValue;
+        
+       if(PORTDbits.RD6 == 0)
+       {
+           number -= 1;
+           break;
+       }
+        
+       if(PORTDbits.RD7 == 0)
+       {
+           number += 1;
+           break;
+       }
+        
+        __delay32(4000000);
+    }
+}
+
 
 int main(void) 
 {
@@ -263,7 +338,17 @@ int main(void)
         snake();
     }
     
-    if(number > 6)
+    if(number == 7)
+    {
+        queue();
+    }
+    
+    if(number == 8)
+    {
+        generator();
+    }
+    
+    if(number > 8)
     {
         number = 0;
     }
