@@ -1,0 +1,519 @@
+// PIC24FJ128GA010 Configuration Bit Settings
+// For more on Configuration Bits, see Section 1.1
+// consult your device data sheet
+// CONFIG2
+#pragma config POSCMOD = XT // XT Oscillator mode selected
+#pragma config OSCIOFNC = ON // OSC2/CLKO/RC15 as port I/O (RC15)
+#pragma config FCKSM = CSDCMD // Clock Switching and Monitor disabled
+#pragma config FNOSC = PRI // Primary Oscillator (XT, HS, EC)
+#pragma config IESO = ON // Int Ext Switch Over Mode enabled
+// CONFIG1
+#pragma config WDTPS = PS32768 // Watchdog Timer Postscaler (1:32,768)
+#pragma config FWPSA = PR128 // WDT Prescaler (1:128)
+#pragma config WINDIS = ON // Watchdog Timer Window Mode disabled
+#pragma config FWDTEN = OFF // Watchdog Timer disabled
+#pragma config ICS = PGx2 // Emulator/debugger uses EMUC2/EMUD2
+#pragma config GWRP = OFF // Writes to program memory allowed
+#pragma config GCP = OFF // Code protection is disabled
+#pragma config JTAGEN = OFF // JTAG port is disabled
+// #pragma config statements should precede project file includes.
+// Use project enums instead of #define for ON and OFF.
+
+#include <xc.h>
+#include <libpic30.h>
+#include <stdio.h>
+#include <string.h>
+#include "lcd.h"
+#include "adc.h"
+#include "buttons.h"
+#define TOTAL_TIME (300) // w sekundach
+ 
+unsigned int seconds = TOTAL_TIME;
+
+unsigned char isRunning = 0; // Flaga okre?laj?ca, czy licznik jest uruchomiony (1) lub zatrzymany (0)
+
+unsigned char flag = 0;
+ 
+void StartStopTimer() {
+
+    isRunning = !isRunning; // Zmiana stanu flagi - je?li licznik by? zatrzymany, to uruchamiamy, a je?li dzia?a?, to zatrzymujemy
+
+}
+ 
+void ResetTimer() {
+
+    seconds = TOTAL_TIME; // Przywracamy czas do warto?ci pocz?tkowej
+
+}
+ 
+int main(void) {
+
+    ADC_SetConfiguration(ADC_CONFIGURATION_DEFAULT);
+
+    // ADC ma czyta? potencjometr
+
+    ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
+
+    char buffer[16]; // bufor na znaki do wy?wietlenia na ekranie
+
+    LCD_Initialize(); // inicjalizacja LCD // Inicjalizacja przycisków
+
+    unsigned int value;
+
+    unsigned int remainingSeconds = seconds;
+
+
+    while (1) {
+
+        while (flag < 1) {
+
+        value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
+
+        unsigned char normalizedValue = value >> 2 ;
+
+        sprintf(buffer, "Wybor mocy: %d",normalizedValue);
+
+        LCD_ClearScreen();
+
+        LCD_PutString(buffer, strlen(buffer));
+
+        __delay32(4000000); //czekamy sekund?
+
+            if (BUTTON_IsPressed(BUTTON_S5) == true ){
+
+                flag++;
+
+            }
+
+        }
+
+        if (flag > 0){
+
+            if (BUTTON_IsPressed(BUTTON_S6) == true) { // Sprawdzamy, czy przycisk Start/Stop zosta? naci?ni?ty
+
+                StartStopTimer(); // Wywo?ujemy funkcj? obs?uguj?c? Start/Stop
+
+            }
+ 
+            if (BUTTON_IsPressed(BUTTON_S5) == true && BUTTON_IsPressed(BUTTON_S3) == true) { // Sprawdzamy, czy przycisk Reset zosta? naci?ni?ty
+
+                ResetTimer(); // Wywo?ujemy funkcj? obs?uguj?c? Reset
+
+            }
+ 
+            if (isRunning == 1 && remainingSeconds > 0) { // Je?li licznik jest w??czony i pozosta?y jeszcze jakie? sekundy
+
+                remainingSeconds--; // Odliczamy czas
+
+            }
+
+            if (BUTTON_IsPressed ( BUTTON_S3 ) == true) {
+
+                remainingSeconds = remainingSeconds + 30;
+
+            } else if ((BUTTON_IsPressed ( BUTTON_S4 ) == true)) {
+
+                remainingSeconds = remainingSeconds - 30;
+
+            }
+ 
+            unsigned char minutes = remainingSeconds / 60;
+
+            unsigned char secs = remainingSeconds % 60;
+
+            sprintf(buffer, "%02u:%02u", minutes, secs); // zapis czasu do bufora
+ 
+            // wy?wietlenie na ekranie
+
+            LCD_ClearScreen();
+
+            LCD_PutString(buffer, strlen(buffer));
+
+            __delay32(4000000); //czekamy sekund?
+
+        }
+
+    }
+
+ 
+    return 0;
+
+}
+
+
+
+
+
+
+/*int main(void) {
+    // Konfiguracja ADC
+    ADC_SetConfiguration(ADC_CONFIGURATION_DEFAULT);
+    ADC_ChannelEnable(ADC_CHANNEL_POTENTIOMETER);
+    
+    // Ustawienie portu A jako wyj?cie
+    TRISA = 0x0000; 
+
+    unsigned int value;
+    unsigned char normalizedValue;
+    unsigned int flag = 0;
+    
+    while(1){
+        // Odczyt warto?ci z potencjometra
+        value = ADC_Read10bit(ADC_CHANNEL_POTENTIOMETER);
+        
+        // Je?li warto?? jest maksymalna, kontynuuj
+        if(value == 0x3FF) continue; 
+        
+        // Normalizacja warto?ci
+        normalizedValue = value >> 2;
+        
+        // Sprawdzenie warunków
+        if(!flag && normalizedValue > 127){
+            flag = 1;
+            LATA = 1;
+            __delay32(10000000);
+            LATA = 255;
+        }
+        
+        if(flag && normalizedValue < 127){
+            flag = 0;
+            LATA = 0;
+        }
+        
+        // Wy??czenie LED, gdy przycisk S4 jest wci?ni?ty
+        if(BUTTON_IsPressed(BUTTON_S4)) {
+            LATA = 0;
+        }
+    }
+    
+    return 0;
+}
+ \*
+/*
+//int main(void) {
+//    AD1PCFG = 0xFFFF; // set to digital I/O (not analog)
+//    TRISA = 0x0000; // set all port bits to be output
+//    char button = 0b00000001;
+//    while(1){
+//        if(BUTTON_IsPressed (BUTTON_S3) == true){
+//            button--;
+//            if(button == 0b00000000) button = 0b00001001;
+//            __delay32(100000);
+//        } else if(BUTTON_IsPressed (BUTTON_S4) == true){
+            button++;
+            if(button == 0b00001010) button = 0b00000001;
+            __delay32(100000);
+        }
+        switch(button){
+            case 1:
+                zadanie1();
+                break;
+            case 2:
+                zadanie2();
+                break;
+            case 3:
+                zadanie3();
+                break;
+            case 4:
+                zadanie4();
+                break;
+            case 5:
+                zadanie5();
+                break;
+            case 6:
+                zadanie6();
+                break;
+            case 7:
+                zadanie7();
+                break;
+            case 8:
+                zadanie8();
+                break;
+            case 9:
+                zadanie9();
+                break;
+        }
+    }
+}
+
+    int zadanie1(){
+        unsigned char value = 0b00000000;
+        LATA = value;
+        while(1){
+            __delay32(1000000);
+            LATA = ++value;
+            if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        }
+    }
+        int zadanie2(){
+        unsigned char value = 0b11111111;
+        LATA = value;
+        while(1) {
+            __delay32(1000000);
+            LATA = --value;
+            if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        }
+    }
+
+// Zadanie 2
+    void zadanie3() {
+        unsigned char portValue;
+        unsigned char gray;
+        AD1PCFG = 0xFFFF; 
+        TRISA = 0x0000; 
+
+        while(1) {
+            gray = portValue ^ (portValue/2);
+            portValue += 1;
+            LATA = gray;
+            __delay32(5000000);
+             if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        } 
+    }
+
+// Zadanie 3
+    void zadanie4() {
+        unsigned char portValue = 255;
+        unsigned char gray;
+        AD1PCFG = 0xFFFF; 
+        TRISA = 0x0000; 
+
+        while(1) {
+            gray = portValue ^ (portValue/2);
+            portValue--;
+            LATA = gray;
+            __delay32(5000000);
+             if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        }
+    }
+
+// Zadanie 4
+    void zadanie5() {
+        unsigned char portValue;
+        unsigned char bcd;
+        AD1PCFG = 0xFFFF; 
+        TRISA = 0x0000; 
+
+        while(1){
+            bcd = (((portValue/10) << 4) | (portValue % 10));
+            portValue++;
+            LATA = bcd;
+            __delay32(5000000);
+             if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        }
+    }
+
+// Zadanie 5
+    void zadanie6() {
+        unsigned char portValue = 99;
+        unsigned char bcd;
+        AD1PCFG = 0xFFFF; 
+        TRISA = 0x0000; 
+
+        while(1){
+            bcd = (((portValue/10) << 4) | (portValue % 10));
+            portValue--;
+            LATA = bcd;
+            __delay32(1000000);
+             if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        }
+    }
+
+// Zadanie 6
+    int zadanie7(){
+            unsigned char snake = 0b00000111;
+            while(snake != 0b11100000){
+                LATA = snake;
+                snake <<= 1;
+                __delay32(1000000);
+                if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+            }
+            while(snake != 0b00000011){
+                LATA = snake;
+                snake >>= 1;
+                __delay32(1000000);
+                if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+            }
+    }
+
+// Zadanie 7
+    void zadanie8() {
+        unsigned char portValue;
+        unsigned char value = 0;
+        AD1PCFG = 0xFFFF;
+        TRISA = 0x0000;
+
+        for (int i = 0; i < 8; i++) {
+            unsigned char temp = 1;
+            for(int j = i + 1; j < 8; j++){
+                LATA = value + temp;
+                temp <<=1;
+                __delay32 (1000000);
+                 if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+            }
+            LATA = (value + temp);
+            value += temp;
+            __delay32 (100000);
+             if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+        }
+    }
+
+// Zadanie 8
+    void zadanie9() {
+        unsigned char portValue;
+        unsigned char seed = 0b1110011; 
+        AD1PCFG = 0xFFFF;
+        TRISA = 0x0000;
+
+        while(1){
+            for (int i = 0; i < 10; ++i) {
+                seed = (((seed & (1 << 6)) ^ (seed & (1 << 5)) ^
+                         (seed & (1 << 4)) ^ (seed & (1 << 1)) ^ (seed & 1)) << 6) | (seed >> 1);
+                LATA = seed & 0b00111111; 
+                __delay32 (10000000);
+                 if(BUTTON_IsPressed (BUTTON_S3) || BUTTON_IsPressed (BUTTON_S4)) return 0;
+            }
+        }
+    }
+ */
+
+
+//int main(void) {
+//    unsigned char portValue = 0;
+//    char currentS6 = 0, currentS7 = 0, prevS6 = 0, prevS7 = 0;
+//    TRISA = 0x0000; 
+//    TRISD = 0xFFFF; 
+//
+//    while(1) {
+//        LATA = portValue;
+//        prevS6 = PORTDbits.RD6;
+//        prevS7 = PORTDbits.RD7;
+//       __delay32(15000);
+//        char currentS6 = PORTDbits.RD6;
+//        char currentS7 = PORTDbits.RD7;
+//       
+//        if(currentS6 - prevS6 == 1){
+//            portValue++;
+//        }
+//        if(currentS7 - prevS7 == 1){
+//            portValue--;
+//        }
+//    }
+//    return 0;
+//}
+//int main(void){
+//    unsigned char portValue;
+//    unsigned char gray;
+//    AD1PCFG = 0xFFFF; // set to digital I/O (not analog)
+//    TRISA = 0x0000; // set all port bits to be output
+//
+//    while(1) {
+//        gray = portValue ^ (portValue/2);
+//        portValue += 1;
+//        LATA = gray;
+//        __delay32(5000000);
+//    } 
+//    return -1;
+//}
+
+//int main(void){
+//    unsigned char portValue = 255;
+//    unsigned char gray;
+//    AD1PCFG = 0xFFFF; // set to digital I/O (not analog)
+//    TRISA = 0x0000; // set all port bits to be output
+//    while(1) {
+//        gray = portValue ^ (portValue/2);
+//       portValue --;
+//       LATA = gray;
+//        __delay32(5000000);
+//    }
+//    return -1;
+//}
+
+//int main(void){
+//    unsigned char portValue;
+//    unsigned char bcd;
+//    AD1PCFG = 0xFFFF; // set to digital I/O (not analog)
+//    TRISA = 0x0000; // set all port bits to be output
+//    
+//    while(1){
+//        bcd = (((portValue/10) << 4) | (portValue % 10));
+//        portValue ++;
+//      LATA = bcd;
+//        __delay32(5000000);
+//    }
+//   return -1;
+//}
+
+
+//int main(void){
+//    unsigned char portValue = 99;
+//   unsigned char bcd;
+//    AD1PCFG = 0xFFFF; // set to digital I/O (not analog)
+//    TRISA = 0x0000; // set all port bits to be output
+//    
+//    while(1){
+//        bcd = (((portValue/10) << 4) | (portValue % 10));
+//        portValue --;
+//       LATA = bcd;
+//        __delay32(5000000);
+//   }
+//    return -1;
+//}
+
+//zadanie 7
+
+//int main(void) {
+//    unsigned char portValue;
+//    unsigned char snake = 0b0000111;
+//    AD1PCFG = 0xFFFF;
+//    TRISA = 0x0000;
+//        while (1) {
+//            while (snake != 0b11100000) {
+//                LATA = snake;
+//                snake <<=1;
+//                __delay32 (1000000) ;
+//        }
+//            while (snake != 0b00000011) {
+//                LATA = snake;
+//                snake >>=1;
+//                __delay32 (1000000) ;
+//            }
+//        }
+//    return -1;
+//}
+//zadanie 8
+//int main(void) {
+//    unsigned char portValue;
+//    unsigned char value = 0;
+//    AD1PCFG = 0xFFFF;
+//   TRISA = 0x0000;
+//    for (int i = 0; i < 8; i++) {
+//        unsigned char temp = 1;
+//    for(int j = i + 1; j < 8; j++){
+//        LATA = value + temp;
+//        temp <<=1;
+//        __delay32 (1000000);
+//    }
+//    LATA = (value + temp);
+//    value += temp;
+//    __delay32 (10000000);
+//    }
+//}
+
+//zadanie 9
+//int main(void) {
+//   unsigned char portValue;
+//   unsigned char seed = 0b1110011; 
+//   AD1PCFG = 0xFFFF;
+//   TRISA = 0x0000;
+//   while(1){
+//        for (int i = 0; i < 10; ++i) {
+//            seed = (((seed & (1 << 6)) ^ (seed & (1 << 5)) ^
+//                    (seed & (1 << 4)) ^ (seed & (1 << 1)) ^ (seed & 1)) << 6) | (seed >> 1);
+//            LATA = seed & 0b00111111; 
+//            __delay32 (10000000);
+//        }
+//    }
+//   return -1;
+//}
