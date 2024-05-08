@@ -1,0 +1,69 @@
+
+#include <xc.h>
+#include <libpic30.h>
+#include <stdio.h>
+#include <string.h>
+#include "lcd.h"
+#include "buttons.h"
+#define TOTAL_TIME (20) // w sekundach
+volatile unsigned int seconds = TOTAL_TIME;
+
+int main(void) {
+    char buffer[18]; // bufor na znaki do wyświetlenia na ekranie
+    LCD_Initialize(); // inicjalizacja LCD
+    unsigned int remainingSeconds = seconds;
+    
+    unsigned int playerOneS = seconds;
+    unsigned int playerTwoS = seconds;
+    
+    unsigned int player = 1;
+    
+    remainingSeconds = playerOneS;
+    while(playerOneS > 1 && playerTwoS > 1) {
+        __delay32(1000000);
+        if (BUTTON_IsPressed ( BUTTON_S3 ) == true) {
+            player = 2; 
+        }
+        if (BUTTON_IsPressed ( BUTTON_S4 ) == true) {
+            player = 1;
+        }
+        if (BUTTON_IsPressed ( BUTTON_S6 ) == true) {
+            pom(18);
+            break;
+        }
+        __delay32(1000000); //czekamy sekundę
+        unsigned char minutes1 = playerOneS / 60;
+        unsigned char secs1 = playerOneS % 60;
+        
+        unsigned char minutes2 = playerTwoS / 60;
+        unsigned char secs2 = playerTwoS % 60;
+        sprintf(buffer, "%02u:%02u P1\n%02u:%02u P2", minutes1, secs1, minutes2, secs2); // zapis czasu do bufora
+        // wyświetlenie na ekranie
+        LCD_ClearScreen();
+        LCD_PutString(buffer, strlen(buffer));
+        __delay32(1000000); //czekamy sekundę
+        
+        if(player == 1){
+            remainingSeconds = playerOneS - 1;
+            playerOneS = remainingSeconds;
+        } else if(player == 2){
+            remainingSeconds = playerTwoS - 1;
+            playerTwoS = remainingSeconds;
+        }
+        
+        __delay32(1000000);
+    }
+    
+    sprintf(buffer, "%12s", "koniec czasu");
+    LCD_ClearScreen();
+    LCD_PutString(buffer, strlen(buffer));
+    __delay32(40000000); //czekamy 10 sekund
+    return 0;
+}
+void pom(int n){
+    char buffer[n];
+    sprintf(buffer, "%12s", "Gra przerwana");
+    LCD_ClearScreen();
+    LCD_PutString(buffer, strlen(buffer));
+    __delay32(40000000); //czekamy 10 sekund
+}
