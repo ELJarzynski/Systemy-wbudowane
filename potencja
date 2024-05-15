@@ -83,6 +83,7 @@ int main(void) {
             alarm = false;
             alarm_extended = false;
             LATA = 0;
+            __delay32(100000000);
             // break
         }
     }
