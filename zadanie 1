@@ -270,6 +270,10 @@ void queue()
             break;
         }
     }
+    if(portValue = 255)
+    {
+        number +=1;
+    }
     
 }
 
@@ -313,46 +317,64 @@ int main(void)
     if(number == 0)
     {
         BinaryCountUp();
+        LATA = 1;
+        __delay32(100000000);
     }
     
     if(number == 1)
     {
         BinaryCountDown();
+        LATA = 2;
+        __delay32(100000000);
     }
     
     if(number == 2)
     {
         GrayCountUp();
+        LATA = 3;
+        __delay32(100000000);
     }
     
     if(number == 3)
     {
         GrayCountDown();
+        LATA = 4;
+         __delay32(100000000);
     }
     
     if(number == 4)
     {
         BCDCountUp();
+        LATA = 5;
+        __delay32(100000000);
     }
     
     if(number == 5)
     {
         BCDCountDown();
+        LATA = 6;
+        __delay32(100000000);
     }
     
     if(number == 6)
     {
-        snake();
+       snake();
+       LATA = 7;
+        __delay32(100000000);
     }
     
     if(number == 7)
     {
         queue();
+        LATA = 8;
+        __delay32(100000000);
     }
     
     if(number == 8)
     {
         generator();
+        LATA = 9;
+        __delay32(100000000);
     }
     
     if(number > 8)
