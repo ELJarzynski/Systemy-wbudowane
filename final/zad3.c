@@ -60,8 +60,8 @@ unsigned char upper_left_skull[8] = {
     0b11111,
     0b11001,
     0b11001,
-    0b01110,
-    0b01101,
+    0b01111,
+    0b01111,
     0b00101,
     0b00101
 };
@@ -71,30 +71,52 @@ unsigned char upper_right_skull[8] = {
     0b11111,
     0b10011,
     0b10011,
-    0b01110,
-    0b10110,
+    0b11110,
+    0b11110,
     0b10100,
     0b10100
 };
 
 unsigned char down_left_jaw_neutral[8] = {
-    0b00010,
-    0b00010,
-    0b01111,
+    0b01010,
     0b01111,
     0b00111,
+    0b00011,
+    0b00000,
     0b00000,
     0b00000,
     0b00000
 };
 
 unsigned char down_right_jaw_neutral[8] = {
-    0b01000,
-    0b01000,
-    0b11110,
+    0b01010,
     0b11110,
     0b11100,
+    0b11000,
     0b00000,
+    0b00000,
+    0b00000,
+    0b00000
+};
+
+unsigned char down_left_jaw_laugh[8] = {
+    0b00000,
+    0b00000,
+    0b01010,
+    0b01111,
+    0b00111,
+    0b00011,
+    0b00000,
+    0b00000
+};
+
+unsigned char down_right_jaw_laugh[8] = {
+    0b00000,
+    0b00000,
+    0b01010,
+    0b11110,
+    0b11100,
+    0b11000,
     0b00000,
     0b00000
 };
@@ -171,12 +193,28 @@ int main(void) {
     TRISE = 0x0000;
     
     LCD_init();                 // Inicjalizacja wyswietlacza
-    LCD_saveCustChar(0, symbol1);
-    LCD_setCursor(2,0);
-    LCD_print("hehe xd");  // Wyswietlenie napisu
-    //LCD_sendData(0);
+    LCD_saveCustChar(0, upper_left_skull);
+    LCD_saveCustChar(1, upper_right_skull);
+    LCD_saveCustChar(2, down_left_jaw_neutral);
+    LCD_saveCustChar(3, down_right_jaw_neutral);
+    LCD_saveCustChar(4, down_left_jaw_laugh);
+    LCD_saveCustChar(5, down_right_jaw_laugh);
+    LCD_setCursor(1,1);
+    LCD_print("Zaklad");
+    LCD_setCursor(2,1);
+    LCD_print("Pogrzebowy");
+    
+    LCD_setCursor(1,11);
+    LCD_sendData(0);
+    LCD_sendData(1);
+    LCD_setCursor(2,11);
+    LCD_sendData(2);
+    LCD_sendData(3);
     __delay_ms(500);
-    LCD_sendCommand(LCD_SHIFT_R);
+    LCD_setCursor(2,11);
+    LCD_sendData(4);
+    LCD_sendData(5);
     __delay_ms(500);
+    
     return 0;
 }
