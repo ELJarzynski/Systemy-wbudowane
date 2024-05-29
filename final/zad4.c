@@ -117,6 +117,7 @@ int main(void) {
     TRISB = 0x7FFF;     // Ustawienie rejestrow kierunku
     TRISD = 0xFFE7;
     TRISE = 0x0000;
+    TRISA = 0xFFFF;
     
     AD1CON1 = 0x80E4;   // Ustawienia ADC
     AD1CON2 = 0x0404;
@@ -131,18 +132,20 @@ int main(void) {
     bool running = false;
     bool reset = false;
     
-    char current6 = 0, prev6 = 0, current7 = 0, prev7 = 0, current8 = 0, prev8 = 0;
+    unsigned char current6 = 0, prev6 = 0;
+    unsigned char current7 = 0, prev7 = 0;
+    unsigned char currentA7 = 0, prevA7 = 0;
     
-    while(1) {
+ while(1) {
         power = read_ADC() / 10; // Skalowanie wartości ADC do zakresu 0-102
         
-        prev6 = PORTDbits.RD6;      //scanning for a change of buttons' state
-        prev7 = PORTDbits.RD7;
-		prev8 = PORTDbits.RD8;
-        __delay32(150000);
         current6 = PORTDbits.RD6;
         current7 = PORTDbits.RD7;
-		current8 = PORTDbits.RD8;
+		currentA7 = PORTAbits.RA7;
+        __delay32(150000);
+        prev6 = PORTDbits.RD6;      //scanning for a change of buttons' state
+        prev7 = PORTDbits.RD7;
+		prevA7 = PORTAbits.RA7;
         
         if(current6 - prev6 == 1){  // Przycisk dodawania czasu
             time += 10;
@@ -152,7 +155,7 @@ int main(void) {
             running = !running;
         }
         
-        if(current8 - prev8 == 1){  // Przycisk reset
+        if(currentA7 - prevA7 == 1){  // Przycisk reset
             power = 0;
             time = 0;
             running = false;
