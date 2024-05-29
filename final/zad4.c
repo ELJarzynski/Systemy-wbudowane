@@ -16,7 +16,6 @@
 #include "xc.h"
 #include <libpic30.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 // DEFINICJE MAKRO
 #define FCY         4000000UL   // Częstotliwość pracy oscylatora
@@ -97,32 +96,26 @@ unsigned int read_ADC(void){
     return ADC1BUF0;
 }
 
-void clear_line(unsigned char row){
-    LCD_setCursor(row, 0);
-    for (int i = 0; i < 16; i++) { // Assuming a 16x2 LCD
-        LCD_sendData(' ');
-    }
-}
-
-void display_power(unsigned char power){
-    char buffer[16]; // Bufor do przechowywania sformatowanego tekstu
-    sprintf(buffer, "Power: %u", power);
-    clear_line(1);
+void display_power(unsigned int power){
     LCD_setCursor(1, 0);
-    LCD_print((unsigned char*)buffer);
+    LCD_print("Power: ");
+    LCD_sendData('0' + power / 100);
+    LCD_sendData('0' + (power % 100) / 10);
+    LCD_sendData('0' + power % 10);
 }
 
-void display_time(unsigned char time){
-    char buffer[16]; // Bufor do przechowywania sformatowanego tekstu
-    sprintf(buffer, "Time: %02u:%02u", time / 60, time % 60);
-    clear_line(2);
+void display_time(unsigned int time){
     LCD_setCursor(2, 0);
-    LCD_print((unsigned char*)buffer);
+    LCD_print("Time: ");
+    LCD_sendData('0' + time / 60);
+    LCD_sendData(':');
+    LCD_sendData('0' + (time % 60) / 10);
+    LCD_sendData('0' + time % 10);
 }
 
 int main(void) {
-    TRISB = 0x7FFF;     // Ustawienie rejestrów kierunku
-    TRISD = 0xFFFF;
+    TRISB = 0x7FFF;     // Ustawienie rejestrow kierunku
+    TRISD = 0xFFE7;
     TRISE = 0x0000;
     
     AD1CON1 = 0x80E4;   // Ustawienia ADC
@@ -133,33 +126,30 @@ int main(void) {
     
     LCD_init();         // Inicjalizacja wyświetlacza
     
-    unsigned char power = 0;
-    unsigned char time = 0;
+    unsigned int power = 0;
+    unsigned int time = 0;
     bool running = false;
     bool reset = false;
-	
-	char current6 = 0, prev6 = 0, current7 = 0, prev7 = 0, current8 = 0, prev8 = 0; //variables for buttons
+    
+    char current6 = 0, prev6 = 0, current7 = 0, prev7 = 0, current8 = 0, prev8 = 0;
     
     while(1) {
-        power = read_ADC() / 10; // Skalowanie wartości ADC do zakresu 0-255 (unsigned char)
-		
-		prev6 = PORTDbits.RD6;      //scanning for a change of buttons' state
+        power = read_ADC() / 10; // Skalowanie wartości ADC do zakresu 0-102
+        
+        prev6 = PORTDbits.RD6;      //scanning for a change of buttons' state
         prev7 = PORTDbits.RD7;
-		prev8 = PORTDbits.RD8
+		prev8 = PORTDbits.RD8;
         __delay32(150000);
         current6 = PORTDbits.RD6;
         current7 = PORTDbits.RD7;
 		current8 = PORTDbits.RD8;
         
         if(current6 - prev6 == 1){  // Przycisk dodawania czasu
-            if (time <= 245) { // Zapobiega przekroczeniu maksymalnej wartości unsigned char
-                time += 10;
-            }
+            time += 10;
         }
-        
+       
         if(current7 - prev7 == 1){  // Przycisk start/stop
             running = !running;
-			__delay32(100);
         }
         
         if(current8 - prev8 == 1){  // Przycisk reset
@@ -173,6 +163,10 @@ int main(void) {
             time--;
         }
         
+        if(time == 0)
+        {
+            running = false;
+        }
         display_power(power);
         display_time(time);
     }
