@@ -130,20 +130,29 @@ int main(void) {
     unsigned int power = 0;
     unsigned int time = 0;
     bool running = false;
-    bool reset = false;
     
+    // flagi na buttony
     unsigned char current6 = 0, prev6 = 0;
     unsigned char current7 = 0, prev7 = 0;
     unsigned char currentA7 = 0, prevA7 = 0;
     
- while(1) {
+    while(1) {
         power = read_ADC() / 10; // Skalowanie wartości ADC do zakresu 0-102
         
         current6 = PORTDbits.RD6;
         current7 = PORTDbits.RD7;
 		currentA7 = PORTAbits.RA7;
-        __delay32(150000);
-        prev6 = PORTDbits.RD6;      //scanning for a change of buttons' state
+        
+        if(running && time > 0 && power > 0){
+            __delay_ms(1000); // Odliczanie w dół co sekundę
+            time--;
+        }
+        else
+        {
+            __delay32(150000); //delay do wykrywania stanow gdy nie jest uruchomiony
+        }
+        
+        prev6 = PORTDbits.RD6;      
         prev7 = PORTDbits.RD7;
 		prevA7 = PORTAbits.RA7;
         
@@ -161,11 +170,13 @@ int main(void) {
             running = false;
         }
         
-        if(running && time > 0){
-            __delay_ms(1000); // Odliczanie w dół co sekundę
-            time--;
+        //zatrzymanie w przypadku zmiany mocy na zero
+        if(power == 0)
+        {
+            running = false;
         }
         
+        //zatrzymanie gdy czas dobiegnie konca
         if(time == 0)
         {
             running = false;
