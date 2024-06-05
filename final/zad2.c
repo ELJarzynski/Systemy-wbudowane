@@ -35,20 +35,21 @@ int main(void) {
     AD1CHS = 0;
     AD1CSSL = 0x0020;   //AD1CSSL = 0b0000000000100000;
     
-    int nastawa = 550; // polowa zakresu potencjometru
-    bool alarm = false; // flaga fazy poczatkowej alarmu, migajacy LED
-    bool alarm_extended = false; // flaga fazy ostatniej alarmu, zapalone wszystkie LEDy
-    char current6 = 0, prev6 = 0;
     
+    bool decoy = false; // flaga fazy poczatkowej alarmu, migajacy LED
+    bool boom = false; // flaga fazy ostatniej alarmu, zapalone wszystkie LEDy
+    int buttonState  = 0, previousButtonState  = 0;
+    
+    int potencjometr = 550; // polowa zakresu potencjometru
     while(1) 
     {
         while(!AD1CON1bits.DONE);
-        prev6 = PORTDbits.RD6;
+        previousButtonState  = PORTDbits.RD6;
         __delay32(100000);
-        current6 = PORTDbits.RD6;
+        buttonState  = PORTDbits.RD6;
         
-		//miganie pojedynczego LEDa
-        if(alarm == true)
+		// odliczanie czasu do zapalenia wszystkich ledów
+        if(decoy == true)
             {
                 for(int i=0; i<5; i++)
                 {
@@ -57,41 +58,41 @@ int main(void) {
                     LATA = 0;
                     __delay32(10000000);
                 }
-				//aktywacja ostatniej fazy
-                alarm_extended = true;
-                alarm = false;
+				//zamiana na ostatnia faze
+                boom = true;
+                decoy = false;
             }
         
-		//zapalone wszystkie LEDy
-        if(alarm_extended == true)
+		// alarm 
+        if(boom == true)
         {
             LATA = 255;
-            alarm = false;
+            decoy = false;
         }
         
-		//Warunek do aktywacji alarmu
-        if(ADC1BUF0 > nastawa && alarm_extended == false)
+		// Warunek do aktywacji alarmu poprzez nastawienie potencjometru na wiekszy zakres niz ustawioną nastawe
+        if(ADC1BUF0 > potencjometr && boom == false)
         {
-            alarm = true;
+            decoy = true;
         }
 		
-		//Wylaczenie alarmu poprzez nastawienie potencjometru ponizej zakresu
-        if(ADC1BUF0 < nastawa)
+		// Zgaszenie alarmu poprzez nastawienie potencjometru ponizej zakresu nastawy
+        if(ADC1BUF0 < potencjometr)
         {
-            alarm = false;
-            alarm_extended = false;
+            decoy = false;
+            boom = false;
             LATA = 0;
         }
         
-		//Wylaczanie, a bardziej 'drzemka', alarmu za pomoco przycisku
-        if(current6 - prev6 == 1)
+		// Przerwanie alarmu
+        if(buttonState  - previousButtonState  == 1)
         {
-            alarm = false;
-            alarm_extended = false;
+            decoy = false;
+            boom = false;
             LATA = 0;
-            __delay32(100000000);
-			//jezeli potencjometr nie zostal ustawiony ponizej zakresu po tym czasie, to alarm znow sie zalaczy
-        }
+            __delay32(500000000);
+			// jezeli potencjometr nie zostal ustawiony ponizej zakresu po tym czasie, to alarm znow sie zalaczy
+        } 
     }
     return 0;
 }
