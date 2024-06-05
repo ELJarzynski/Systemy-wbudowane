@@ -88,49 +88,44 @@ void LCD_init(){
     __delay_ms(2);
 }
 
-void display_time(unsigned char row, unsigned int time){
-    char buffer[16];
-    sprintf(buffer, "%02u:%02u", time / 60, time % 60);
-    LCD_setCursor(row, 0);
-    LCD_print((unsigned char*)buffer);
+void display_time(unsigned int time, int cursor){
+    LCD_setCursor(cursor, 0);
+    LCD_print("Time: ");
+    LCD_sendData('0' + time / 60);
+    LCD_sendData(':');
+    LCD_sendData('0' + (time % 60) / 10);
+    LCD_sendData('0' + time % 10);
 }
 
+
 int main(void) {
-    TRISB = 0x7FFF;     // Ustawienie rejestrów kierunku
-    TRISD = 0xFFFF;
+    TRISB = 0x7FFF;     // Ustawienie rejestrow kierunku
+    TRISD = 0xFFE7;
     TRISE = 0x0000;
+    TRISA = 0x0000;
 
     LCD_init();         // Inicjalizacja wyświetlacza
 
     unsigned int time_player1 = 300; // 5 minut w sekundach
     unsigned int time_player2 = 300; // 5 minut w sekundach
-    bool player1_turn = true;
+    bool player1_turn = true; // flagi na tury
     bool player2_turn = false;
-    bool game_over = false;
+    bool game_over = false; // flaga konca gry
 	
-	char current6 = 0, prev6 = 0, current7 = 0, prev7 = 0;
-
     while(1) {
         if(game_over) {
             LCD_setCursor(1, 0);
-            LCD_print((unsigned char*)"Game Over");
+            LCD_print("Game Over.");
             while(1); // Zatrzymaj program
         }
-		
-		prev6 = PORTDbits.RD6;      //scanning for a change of buttons' state
-        prev7 = PORTDbits.RD7;
-        __delay32(150000);
-        current6 = PORTDbits.RD6;
-        current7 = PORTDbits.RD7;
-		
 
-        if(current6 - prev6 == 1){  // Przycisk gracza 1
+        if(PORTDbits.RD6==0){  // Przycisk gracza 1
             player1_turn = false;
             player2_turn = true;
             
         }
 
-        if(current7 - prev7 == 1){  // Przycisk gracza 2
+        if(PORTDbits.RD7==0){  // Przycisk gracza 2
             player2_turn = false;
             player1_turn = true;
         }
@@ -145,18 +140,19 @@ int main(void) {
             time_player2--;
         }
 
-        display_time(1, time_player1);
-        display_time(2, time_player2);
-
+        display_time(time_player1,1);
+        display_time(time_player2,2);
+        
+        // Koniec czasu
         if(time_player1 == 0) {
-            LCD_setCursor(1, 0);
-            LCD_print((unsigned char*)"Player 1 loses");
+            LCD_setCursor(2, 0);
+            LCD_print("Player 1 loses");
             game_over = true;
         }
 
         if(time_player2 == 0) {
-            LCD_setCursor(1, 0);
-            LCD_print((unsigned char*)"Player 2 loses");
+            LCD_setCursor(2, 0);
+            LCD_print("Player 2 loses");
             game_over = true;
         }
     }
